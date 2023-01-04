@@ -3,6 +3,11 @@ const DEFAULT_WALL_LAYOUT_CONFIG = require("../config/config.display.js");
 const DEFAULT_POWER_CONFIG = require("../config/config.power.js");
 const PixelMappingUtils = require("../utils/mappings/pixel-mapping-utils");
 
+const configs = require('../config/config-manager')
+
+console.log("getting config for POWER", configs.getConfig('POWER'))
+
+
 class Wall {
   constructor({
     wallAddressConfig = DEFAULT_WALL_ADDRESS_CONFIG,
@@ -34,6 +39,8 @@ class Wall {
   messageHandler(message, from){
     console.log("wall received message", message, "\nfrom:", from)
   }
+
+
 }
 
 class WallUnit {
