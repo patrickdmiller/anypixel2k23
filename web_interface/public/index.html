@@ -1,0 +1,22 @@
+
+<html>
+  <head>
+    <!-- <script src="/scripts/content.js" ></script> -->
+  </head>
+  <body>
+    <button class="action" data-ref="run_test_pixel" id="run_test_pixels">run pixel test</button>
+    <button class="action" data-ref="stop_test_pixel" id="stop_test_pixels">stop pixel test</button>
+    <button class="action" data-ref="run_test_button" id="run_test_button">run button test</button>
+    <button class="action" data-ref="stop_test_button" id="stop_test_button">stop button test</button>
+    <button class="action" data-ref="toggle_debug" id="toggle_debug">toggle debug</button>
+    <div id="stats">
+      <div>wall:<span class="wall"></span></div>
+      <div>render:<span class="render"></span></div>
+      <div>general:<span class="general"></span></div>
+    </div>
+    <pre id="messages" style="height: 400px; overflow: scroll"></pre>
+
+    <script src="/js/app.js"></script>
+
+  </body>
+</html>
