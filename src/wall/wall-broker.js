@@ -14,6 +14,10 @@ module.exports = class WallBroker {
     }
   }
 
+  packetParser(){
+    //what kind of 
+  }
+
   initSockets(){
     this.sockets.fromWall.bind(this.wallBrokerConfig.controllerPort)
     this.sockets.fromWall.on('message', this.wall.messageHandler)
