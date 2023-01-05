@@ -2,8 +2,6 @@ const dgram = require('dgram')
 const configs = require("../config/config-manager");
 const dbc = configs.getConfig('BROKER')
 
-
-
 const PACKET_KEYS = {
 
 }

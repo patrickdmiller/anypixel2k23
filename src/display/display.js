@@ -3,6 +3,8 @@ const DC = configs.getConfig("DISPLAY");
 const DCA = configs.getConfig("DISPLAY_ADDRESSING");
 
 const { DisplayBroker } = require("./display-broker");
+
+const PacketBuilder = require('../packets/packet-builder')
 class Display {
   constructor() {
     this.displayUnits = [];
@@ -52,10 +54,23 @@ class Display {
     let powerUnitNumber = this.powerUnitsByIP[from.address];
     if (process.env.EMULATOR == "true") {
       displayUnitNumber = powerUnitNumber = data_8v[1];
-  
     }
-    console.log("wall received message", message, "\nfrom:", from, displayUnitNumber, powerUnitNumber);
-
+    
+    switch(data_8v[0]){
+      case PacketBuilder.commandFlags.rx_inputState:
+        //handleInputState
+        break;
+      case PacketBuilder.commandFlags.rx_statusData:
+        //handlestatusData
+        break; 
+      case PacketBuilder.commandFlags.rx_powerData:
+        if(powerUnitNumber !== null){
+          this.powerUnits[powerUnitNumber].handleMessage(message, from)
+        }
+        break;
+    }
+    // console.log("wall received message", message, "\nfrom:", from, displayUnitNumber, powerUnitNumber, "message type", );
+    
   }
 }
 
@@ -68,7 +83,11 @@ class DisplayUnit {
   }
 }
 
-class PowerUnit {}
+class PowerUnit {
+  messageHandler(message, from){
+    console.log("power unit message : ", message, "from", from)
+  }
+}
 
 class Button {
   constructor() {
