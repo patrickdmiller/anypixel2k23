@@ -13,8 +13,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-const ButtonPacket = require('./button-packet')
-const UDPConfig = require('../config.udp')
+const configs = require("./config/config-manager");
+
+const UDPConfig = configs.getConfig('BROKER')
 const PacketBuilder = module.exports = {};
 
 /**

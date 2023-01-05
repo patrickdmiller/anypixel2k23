@@ -4,12 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "start": "node src/index"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "jest": "^29.3.1",
-    "save-dev": "^0.0.1-security"
+    "dotenv": "^16.0.3",
+    "jest": "^29.3.1"
   }
 }
