@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-var DisplayConfig = require('./config.display');
+// var DisplayConfig = require('./config.display');
 
 /**
  * Configuration options and remapping functions for the power system.

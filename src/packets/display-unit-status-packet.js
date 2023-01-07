@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-var DisplayConfig = require('../config.display');
+const configs = require("../config/config-manager");
+const DisplayConfig = configs.getConfig("DISPLAY");
 
 var DisplayUnitStatusPacket = module.exports = {}
 

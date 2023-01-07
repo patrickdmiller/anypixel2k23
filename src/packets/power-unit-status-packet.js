@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-var PowerConfig = require('../config.power');
-
+const configs = require("../config/config-manager");
+const PowerConfig = configs.getConfig("POWER");
 var PowerUnitStatusPacket = module.exports = {}
 
 /**

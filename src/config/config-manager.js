@@ -7,6 +7,7 @@ const configKeys = {
   DISPLAY_ADDRESSING: "DISPLAY_ADDRESSING", //ports and addresses per unit
   POWER: "POWER", //power supply info
   BROKER: "BROKER", //comm broker
+  WEBSERVER: 'WEBSERVER' //webserver that runs apps in chrome
 };
 if(process.env.EMULATOR == "true"){
   configKeys.DISPLAY_ADDRESSING = "EMULATOR"

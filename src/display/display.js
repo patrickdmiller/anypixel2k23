@@ -1,46 +1,72 @@
 const configs = require("../config/config-manager");
 const DC = configs.getConfig("DISPLAY");
 const DCA = configs.getConfig("DISPLAY_ADDRESSING");
-
 const { DisplayBroker } = require("./display-broker");
-
-const PacketBuilder = require('../packets/packet-builder')
-class Display {
+const { DisplayUnit, DisplayUnitEvents } = require("./display-unit");
+const { PowerUnit, powerUnitEvents } = require("./power-unit");
+const PacketBuilder = require("../packets/packet-builder");
+const EventEmitter = require("events");
+const DisplayEvents = {
+  'STATE_INPUT':'DISPLAY_STATE_INPUT'
+}
+class Display extends EventEmitter {
   constructor() {
+    super();
     this.displayUnits = [];
     this.displayUnitsByIP = {};
     this.powerUnits = [];
     this.powerUnitsByIP = {};
     let unitNumber = 0;
+    this.displayBroker = new DisplayBroker();
     for (let i = 0; i < DCA.unitAddresses.length; i++) {
       for (let j = 0; j < DCA.unitAddresses[i].length; j++) {
         this.displayUnits[unitNumber] = new DisplayUnit({
-          ip: DCA.unitAddresses[i].ip,
-          port: DCA.unitAddresses[i].port,
+          ipAddress: DCA.unitAddresses[i][j].ip,
+          port: DCA.unitAddresses[i][j].port,
           unitNumber: unitNumber,
+          broker: this.displayBroker,
           rowCol: DC.unitNumberToGlobalUnitRowCol(unitNumber),
         });
-        this.displayUnitsByIP[DCA.unitAddresses[i].ip] = unitNumber;
+        let _unitNumber = unitNumber
+        this.displayUnits[unitNumber].on(DisplayUnitEvents["STATE"], (params)=>{
+          
+          this.handleDisplayUnitState({
+            unitNumber:_unitNumber,
+            params:params
+          })
+        });
+        this.displayUnitsByIP[DCA.unitAddresses[i][j].ip] = unitNumber;
         unitNumber++;
       }
     }
 
     unitNumber = 0;
     for (let i = 0; i < DCA.powerUnitAddresses.length; i++) {
-      for (let j = 0; j < DCA.powerUnitAddresses[i].length; j++) {
-        this.powerUnits[unitNumber] = new PowerUnit({
-          ip: DCA.powerUnitAddresses[i].ip,
-          port: DCA.powerUnitAddresses[i].port,
-          unitNumber: unitNumber,
-        });
-        this.powerUnitsByIP[DCA.powerUnitAddresses[i].ip] = unitNumber;
-        unitNumber++;
-      }
+      this.powerUnits[unitNumber] = new PowerUnit({
+        ipAddress: DCA.powerUnitAddresses[i].ip,
+        port: DCA.powerUnitAddresses[i].port,
+        unitNumber: unitNumber,
+        broker: this.displayBroker,
+      });
+      this.powerUnits[unitNumber].on(powerUnitEvents["POWER_UNIT_STATUS"], this.handlePowerUnitStatus.bind(this));
+      this.powerUnitsByIP[DCA.powerUnitAddresses[i].ip] = unitNumber;
+      unitNumber++;
     }
-    console.log(this.powerUnitsByIP)
-    this.displayBroker = new DisplayBroker();
+
   }
 
+  handleDisplayUnitState({unitNumber, params}={}) {
+    let globalStateChanged = []
+    // //figure out global positions for each state change
+    for(const buttonIndex of params){
+      globalStateChanged.push({globalRowCol:DC.unitPixelToRowCol(unitNumber, buttonIndex),  state:this.displayUnits[unitNumber].getStateForInput(buttonIndex)})
+    }
+    this.emit(DisplayEvents['STATE_INPUT'], globalStateChanged)
+  }
+  handlePowerUnitStatus(...params) {
+    console.log("FROM POWER", params);
+
+  }
   initBroker() {
     this.displayBroker.addPacketObserver(this);
     this.displayBroker.initSockets();
@@ -48,6 +74,7 @@ class Display {
 
   messageHandler(message, from) {
     //parse it
+
     let data_8 = message.slice(0);
     let data_8v = new Uint8Array(data_8);
     let displayUnitNumber = this.displayUnitsByIP[from.address];
@@ -55,39 +82,25 @@ class Display {
     if (process.env.EMULATOR == "true") {
       displayUnitNumber = powerUnitNumber = data_8v[1];
     }
-    
-    switch(data_8v[0]){
+
+    switch (data_8v[0]) {
       case PacketBuilder.commandFlags.rx_inputState:
         //handleInputState
+        this.displayUnits[displayUnitNumber].updateInputStates(data_8, PacketBuilder.rxHeaderLength);
         break;
       case PacketBuilder.commandFlags.rx_statusData:
         //handlestatusData
-        break; 
+        break;
       case PacketBuilder.commandFlags.rx_powerData:
-        if(powerUnitNumber !== null){
-          this.powerUnits[powerUnitNumber].handleMessage(message, from)
+        if (powerUnitNumber !== null) {
+          this.powerUnits[powerUnitNumber].updateStatus(data_8, PacketBuilder.rxHeaderLength);
         }
         break;
     }
     // console.log("wall received message", message, "\nfrom:", from, displayUnitNumber, powerUnitNumber, "message type", );
-    
   }
 }
 
-class DisplayUnit {
-  constructor({ ip, port, unitNumber, rowCol } = {}) {
-    this.ip = ip;
-    this.port = port;
-    this.unitNumber = unitNumber;
-    this.rowCol = rowCol;
-  }
-}
-
-class PowerUnit {
-  messageHandler(message, from){
-    console.log("power unit message : ", message, "from", from)
-  }
-}
 
 class Button {
   constructor() {
@@ -99,4 +112,5 @@ module.exports = {
   Display,
   DisplayUnit,
   Button,
+  DisplayEvents
 };
