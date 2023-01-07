@@ -2,10 +2,6 @@ const dgram = require('dgram')
 const configs = require("../config/config-manager");
 const dbc = configs.getConfig('BROKER')
 
-const PACKET_KEYS = {
-
-}
-
 class DisplayBroker {
   constructor() {
     
@@ -29,7 +25,8 @@ class DisplayBroker {
   packetRouter(message, from){
     // console.log(this) 
     for(let i=0; i < this.observers.length; i++){
-      this.observers[i].messageHandler(message, from)
+      //message is Buffer, so pass the Buffer.buffer which is the raw arraybuffer
+      this.observers[i].messageHandler(message.buffer, from)
     }
   }
 

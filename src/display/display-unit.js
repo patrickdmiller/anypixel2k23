@@ -40,7 +40,6 @@ const DisplayUnitEvents = {
 };
 
 class DisplayUnit extends EventEmitter {
-
   constructor({ ipAddress, port, unitNumber, broker }) {
     super();
     this.ipAddress = ipAddress;
@@ -49,17 +48,19 @@ class DisplayUnit extends EventEmitter {
     this.RGBArray = null;
     this.row = null;
     this.col = null;
-    this.inputStates = [];
-    this.inputStatesBuffer = Buffer.alloc(Math.ceil(DisplayConfig.pixelsPerUnit/8))
-    this.inputStates8bitView = new Uint8Array(this.inputStatesBuffer.buffer) //this uses the same memory as the buffer
+    // this.inputStates = [];
+    // this.inputStatesBuffer = Buffer.alloc(Math.ceil(DisplayConfig.pixelsPerUnit/8))
+    this.inputStatesBuffer = new ArrayBuffer(Math.ceil(DisplayConfig.pixelsPerUnit/8))
+    // this.inputStatesBuffer.fill(0)
+    this.inputStates8bitView = new Uint8Array(this.inputStatesBuffer) //this uses the same memory as the buffer
     this.pixelBuffer = null;
     this.healthStatuses = [];
     this.lastUptimes = [];
     this.broker = broker
-    // Initialize input state array with zeros
-    for (var i = 0; i < DisplayConfig.pixelsPerUnit; i++) {
-      this.inputStates.push(0);
-    }
+    // // Initialize input state array with zeros
+    // for (var i = 0; i < DisplayConfig.pixelsPerUnit; i++) {
+    //   this.inputStates.push(0);
+    // }
 
     // Initialize the healthy status array with false
     for (var i = 0; i < DisplayConfig.boardsPerUnit; i++) {
@@ -81,6 +82,12 @@ class DisplayUnit extends EventEmitter {
    * Parse input state update packets and notify the current app of any state changes
    */
   updateInputStates(buffer, headerLength) {
+    if(buffer instanceof ArrayBuffer){
+      console.log("TRUE")
+    }
+    if(buffer instanceof Buffer){
+      console.log("buffer")
+    }
     if(buffer.length - headerLength != this.inputStatesBuffer.length){
       console.warn("invalid buffer length for input")
       return;
@@ -93,13 +100,14 @@ class DisplayUnit extends EventEmitter {
       //this should theoretically never happen as boards only send on change. 
 
     }else{
-      //find changed bytes
+      //find changed byte(s)
+
       const payload8bitView = new Uint8Array(payload.buffer)      
-      
       for(let i = 0; i < this.inputStates8bitView.length; i++){
         if(payload8bitView[i+payloadIndex] == this.inputStates8bitView[i]){
           continue
         }
+        //if the byte is different, find the bit(s) that changed
         for(let b = 0; b < 8; b++){
           if(((1 << b)&payload8bitView[i+payloadIndex] )!=((1 << b)& this.inputStates8bitView[i])){
             changed.push((i*8)+7-b)
@@ -108,34 +116,9 @@ class DisplayUnit extends EventEmitter {
         }
       }
     }
-    //fire the event
+
+    //fire the event so the display knows one of its units has changed state
     this.emit(DisplayUnitEvents['STATE'],changed)
-    return
-    var full_packet = new Uint8Array(buffer);
-    var packet = full_packet.slice(headerLength, full_packet.length);
-    
-
-    var changedInputs = DisplayUnitInputPacket.parse(packet, this.inputStates);
-    console.log(changedInputs)
-    if (changedInputs.length) {
-      var packetLength = DisplayUnitInputPacket.rxPacketLength * changedInputs.length + 1;
-      var data_8 = new ArrayBuffer(packetLength);
-      var data_8v = new Uint8Array(data_8);
-      var currentByte = 0;
-
-      data_8v[currentByte++] = DisplayUnitInputPacket.rxHeader;
-
-      // Get pixel location for each changed input
-      for (var i = 0; i < changedInputs.length; i++) {
-        var position = DisplayConfig.unitPixelToRowCol(this.unitNumber, changedInputs[i].index);
-        data_8v[currentByte++] = position[0];
-        data_8v[currentByte++] = position[1];
-        data_8v[currentByte++] = changedInputs[i].state;
-      }
-      console.log(data_8v)
-      //TODO fire button states
-      // require("./app-controller").sendMessage(data_8);
-    }
   }
 
   /**
@@ -161,7 +144,8 @@ class DisplayUnit extends EventEmitter {
     }, this);
 
     // Dispatch status update event
-    document.dispatchEvent(statusUpdateEvent);
+    this.emit(DisplayUnitEvents['STATUS'],status)
+    // document.dispatchEvent(statusUpdateEvent);
   };
 
   /**

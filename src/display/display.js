@@ -74,7 +74,6 @@ class Display extends EventEmitter {
 
   messageHandler(message, from) {
     //parse it
-
     let data_8 = message.slice(0);
     let data_8v = new Uint8Array(data_8);
     let displayUnitNumber = this.displayUnitsByIP[from.address];
