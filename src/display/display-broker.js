@@ -24,9 +24,10 @@ class DisplayBroker {
   
   packetRouter(message, from){
     // console.log(this) 
+    // console.log("message length: ",  message.length)
     for(let i=0; i < this.observers.length; i++){
       //message is Buffer, so pass the Buffer.buffer which is the raw arraybuffer
-      this.observers[i].messageHandler(message.buffer, from)
+      this.observers[i].displayMessageHandler(message.buffer, from)
     }
   }
 
@@ -35,6 +36,12 @@ class DisplayBroker {
     this.sockets.fromDisplay.bind(dbc.controllerPort)
     // this.sockets.fromDisplay.on('message', (message, from)=>{this.packetRouter(message, from)})
     this.sockets.fromDisplay.on('message', this.packetRouter.bind(this))
+  }
+
+  sendToDisplayUnit(ip, port, data){
+    let data8v = new Uint8Array(data)
+    // console.log(data)
+    this.sockets.toDisplay.send(data8v, 0, data8v.length, port, ip)
   }
 
 }

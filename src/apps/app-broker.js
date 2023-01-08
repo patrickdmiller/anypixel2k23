@@ -1,4 +1,3 @@
-const ws = require("ws");
 const DisplayUnitInputPacket = require("../packets/display-unit-input-packet")
 const logger = require('node-color-log');
 
@@ -9,6 +8,8 @@ class AppBroker {
     }
     this.webserver = webserver;
   }
+
+  //messages for front end
 
   updateInputState(globalStateChanged){
     logger.info('in app-broker: display input state', globalStateChanged)
@@ -25,12 +26,10 @@ class AppBroker {
       data_8v[currentByte++] = state.state
     }
 
-    this.webserver.sendToSockets(data_8v)
+    this.sendToSockets(data_8v)
   }
 
-  sendMessageToApp(message) {
-    console.log("send message to app", message);
-  }
+
 }
 
 module.exports = {

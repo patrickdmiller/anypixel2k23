@@ -6,19 +6,19 @@ if(process.env.EMULATOR=="true"){
 }
 const configs = require("./config/config-manager");
 const { Display, DisplayEvents } = require("./display/display.js");
-const {AppBroker} = require('./apps/app-broker')
-const {Webserver} = require('./webserver/webserver')
+const {Webserver:AppServer, WebserverEvents} = require('./webserver/webserver')
 
 const display = new Display();
-webserver = new Webserver();
-appBroker = new AppBroker({webserver})
-webserver.init()
+appServer = new AppServer();
+// appBroker = new AppBroker({appserver})
+appServer.init()
 
 //when buttons aka inputs change state, end them to the app broker
 display.on(DisplayEvents['STATE_INPUT'], (globalStateChanges)=>{
-  // console.log(globalStateChanges)
-  //tell the appbroker that state has changed
-  appBroker.updateInputState(globalStateChanges)
+  appServer.updateInputState(globalStateChanges)
 })
 
-display.initBroker()
+//when pixels are updated
+appServer.on(WebserverEvents['STATE'], (pixelData)=>{
+  display.pixelMessageHandler(pixelData)
+})

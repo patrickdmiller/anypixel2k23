@@ -24,9 +24,9 @@ const DisplayUnitInputPacket = require("../packets/display-unit-input-packet");
 const DisplayUnitStatusPacket = require("../packets/display-unit-status-packet");
 
 const UPTIME_ALERT_TIMEOUT = 10000;
-function dec2bin(dec) {
-  return (dec >>> 0).toString(2);
-}
+
+const logger = require('node-color-log');
+const { Display } = require("./display");
 
 /**
  * Class which manages the status and communication for a single display unit.
@@ -36,7 +36,7 @@ function dec2bin(dec) {
 
 const DisplayUnitEvents = {
   STATUS: "DISPLAY_UNIT_STATUS",
-  STATE:"DISPLAY_UNIT_STATE"
+  STATE: "DISPLAY_UNIT_STATE",
 };
 
 class DisplayUnit extends EventEmitter {
@@ -50,13 +50,13 @@ class DisplayUnit extends EventEmitter {
     this.col = null;
     // this.inputStates = [];
     // this.inputStatesBuffer = Buffer.alloc(Math.ceil(DisplayConfig.pixelsPerUnit/8))
-    this.inputStatesBuffer = new ArrayBuffer(Math.ceil(DisplayConfig.pixelsPerUnit/8))
+    this.inputStatesBuffer = new ArrayBuffer(Math.ceil(DisplayConfig.pixelsPerUnit / 8));
     // this.inputStatesBuffer.fill(0)
-    this.inputStates8bitView = new Uint8Array(this.inputStatesBuffer) //this uses the same memory as the buffer
+    this.inputStates8bitView = new Uint8Array(this.inputStatesBuffer); //this uses the same memory as the buffer
     this.pixelBuffer = null;
     this.healthStatuses = [];
     this.lastUptimes = [];
-    this.broker = broker
+    this.broker = broker;
     // // Initialize input state array with zeros
     // for (var i = 0; i < DisplayConfig.pixelsPerUnit; i++) {
     //   this.inputStates.push(0);
@@ -73,52 +73,43 @@ class DisplayUnit extends EventEmitter {
     }
   }
 
-  getStateForInput(inputIndex){
-    let byteIndex = Math.floor(inputIndex/8)
-    let shifts = inputIndex - (8 * byteIndex)
-    return ((1<<(8-shifts-1)) & this.inputStates8bitView[byteIndex]) > 0 ? 1 : 0
+  getStateForInput(inputIndex) {
+    let byteIndex = Math.floor(inputIndex / 8);
+    let shifts = inputIndex - 8 * byteIndex;
+    return ((1 << (8 - shifts - 1)) & this.inputStates8bitView[byteIndex]) > 0 ? 1 : 0;
   }
   /**
    * Parse input state update packets and notify the current app of any state changes
    */
   updateInputStates(buffer, headerLength) {
-    if(buffer instanceof ArrayBuffer){
-      console.log("TRUE")
-    }
-    if(buffer instanceof Buffer){
-      console.log("buffer")
-    }
-    if(buffer.length - headerLength != this.inputStatesBuffer.length){
-      console.warn("invalid buffer length for input")
+    if (buffer.byteLength - headerLength != this.inputStatesBuffer.byteLength) {
+      logger.warn("invalid buffer length for input", buffer.length, headerLength, this.inputStatesBuffer.length);
       return;
     }
-    let payload = buffer.slice(headerLength)
-    let payloadIndex = headerLength
- 
-    let changed = []
-    if(this.inputStatesBuffer.compare(payload) == 0){
-      //this should theoretically never happen as boards only send on change. 
+    console.log(buffer)
+    let payload = buffer.slice(headerLength);
+    let payloadIndex = headerLength;
+    console.log(payload)
+    let changed = [];
 
-    }else{
-      //find changed byte(s)
-
-      const payload8bitView = new Uint8Array(payload.buffer)      
-      for(let i = 0; i < this.inputStates8bitView.length; i++){
-        if(payload8bitView[i+payloadIndex] == this.inputStates8bitView[i]){
-          continue
-        }
-        //if the byte is different, find the bit(s) that changed
-        for(let b = 0; b < 8; b++){
-          if(((1 << b)&payload8bitView[i+payloadIndex] )!=((1 << b)& this.inputStates8bitView[i])){
-            changed.push((i*8)+7-b)
-            this.inputStates8bitView[i] = payload8bitView[i+payloadIndex]
-          }
+    //find changed byte(s)
+    const payload8bitView = new Uint8Array(payload);
+    for (let i = 0; i < this.inputStates8bitView.length; i++) {
+      if (payload8bitView[i] == this.inputStates8bitView[i]) {
+        continue;
+      }
+      //if the byte is different, find the bit(s) that changed
+      for (let b = 0; b < 8; b++) {
+        if (((1 << b) & payload8bitView[i]) != ((1 << b) & this.inputStates8bitView[i])) {
+          changed.push(i * 8 + 7 - b);
+          this.inputStates8bitView[i] = payload8bitView[i];
         }
       }
     }
-
+    console.log(changed)
     //fire the event so the display knows one of its units has changed state
-    this.emit(DisplayUnitEvents['STATE'],changed)
+    if(changed.length > 0) 
+      this.emit(DisplayUnitEvents["STATE"], changed);
   }
 
   /**
@@ -131,12 +122,12 @@ class DisplayUnit extends EventEmitter {
     var status = DisplayUnitStatusPacket.parse(packet, this.unitNumber);
 
     // Create status update event
-    var statusUpdateEvent = new CustomEvent(DisplayUnit.statusUpdateEvent, {
-      detail: {
-        unitNumber: this.unitNumber,
-        status: status,
-      },
-    });
+    // var statusUpdateEvent = new CustomEvent(DisplayUnit.statusUpdateEvent, {
+    //   detail: {
+    //     unitNumber: this.unitNumber,
+    //     status: status,
+    //   },
+    // });
 
     status.uptime.forEach(function (t, i) {
       this.healthStatuses[i] = t - this.lastUptimes[i] < UPTIME_ALERT_TIMEOUT;
@@ -144,7 +135,7 @@ class DisplayUnit extends EventEmitter {
     }, this);
 
     // Dispatch status update event
-    this.emit(DisplayUnitEvents['STATUS'],status)
+    this.emit(DisplayUnitEvents["STATUS"], status);
     // document.dispatchEvent(statusUpdateEvent);
   };
 
@@ -201,7 +192,7 @@ class DisplayUnit extends EventEmitter {
       port: this.port,
       payload: data_8,
     });
-
+    // console.log(packet)
     // Save the packet
     this.pixelBuffer = packet;
   };
@@ -299,17 +290,19 @@ class DisplayUnit extends EventEmitter {
    * Transmits a given data packet to the unit's ip address uver UDP
    */
   sendMessage = function (data) {
-    if (DisplayController.socketId) {
-      chrome.sockets.udp.send(DisplayController.socketId, data, this.ipAddress, this.port, function (result) {
-        if (chrome.runtime.lastError) {
-          /* Ignore */
-        }
-      });
-    }
+
+
+    // if (DisplayController.socketId) {
+    //   chrome.sockets.udp.send(DisplayController.socketId, data, this.ipAddress, this.port, function (result) {
+    //     if (chrome.runtime.lastError) {
+    //       /* Ignore */
+    //     }
+    //   });
+    // }
   };
 }
 
 module.exports = {
   DisplayUnit,
-  DisplayUnitEvents
-}
+  DisplayUnitEvents,
+};

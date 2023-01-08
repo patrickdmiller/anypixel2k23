@@ -7,8 +7,8 @@ const { PowerUnit, powerUnitEvents } = require("./power-unit");
 const PacketBuilder = require("../packets/packet-builder");
 const EventEmitter = require("events");
 const DisplayEvents = {
-  'STATE_INPUT':'DISPLAY_STATE_INPUT'
-}
+  STATE_INPUT: "DISPLAY_STATE_INPUT",
+};
 class Display extends EventEmitter {
   constructor() {
     super();
@@ -27,14 +27,22 @@ class Display extends EventEmitter {
           broker: this.displayBroker,
           rowCol: DC.unitNumberToGlobalUnitRowCol(unitNumber),
         });
-        let _unitNumber = unitNumber
-        this.displayUnits[unitNumber].on(DisplayUnitEvents["STATE"], (params)=>{
-          
+        let _unitNumber = unitNumber;
+
+        this.displayUnits[unitNumber].on(DisplayUnitEvents["STATE"], (params) => {
           this.handleDisplayUnitState({
-            unitNumber:_unitNumber,
-            params:params
-          })
+            unitNumber: _unitNumber,
+            params: params,
+          });
         });
+
+        this.displayUnits[unitNumber].on(DisplayUnitEvents["STATUS"], (params) => {
+          this.handleDisplayUnitStatus({
+            unitNumber: _unitNumber,
+            params: params,
+          });
+        });
+
         this.displayUnitsByIP[DCA.unitAddresses[i][j].ip] = unitNumber;
         unitNumber++;
       }
@@ -48,31 +56,71 @@ class Display extends EventEmitter {
         unitNumber: unitNumber,
         broker: this.displayBroker,
       });
-      this.powerUnits[unitNumber].on(powerUnitEvents["POWER_UNIT_STATUS"], this.handlePowerUnitStatus.bind(this));
+      this.powerUnits[unitNumber].on(powerUnitEvents["STATUS"], this.handlePowerUnitStatus.bind(this));
       this.powerUnitsByIP[DCA.powerUnitAddresses[i].ip] = unitNumber;
       unitNumber++;
     }
 
-  }
-
-  handleDisplayUnitState({unitNumber, params}={}) {
-    let globalStateChanged = []
-    // //figure out global positions for each state change
-    for(const buttonIndex of params){
-      globalStateChanged.push({globalRowCol:DC.unitPixelToRowCol(unitNumber, buttonIndex),  state:this.displayUnits[unitNumber].getStateForInput(buttonIndex)})
-    }
-    this.emit(DisplayEvents['STATE_INPUT'], globalStateChanged)
-  }
-  handlePowerUnitStatus(...params) {
-    console.log("FROM POWER", params);
-
-  }
-  initBroker() {
     this.displayBroker.addPacketObserver(this);
     this.displayBroker.initSockets();
   }
 
-  messageHandler(message, from) {
+  handleDisplayUnitState({ unitNumber, params } = {}) {
+    let globalStateChanged = [];
+    // //figure out global positions for each state change
+    for (const buttonIndex of params) {
+      globalStateChanged.push({
+        globalRowCol: DC.unitPixelToRowCol(unitNumber, buttonIndex),
+        state: this.displayUnits[unitNumber].getStateForInput(buttonIndex),
+      });
+    }
+    this.emit(DisplayEvents["STATE_INPUT"], globalStateChanged);
+  }
+  handleDisplayUnitStatus({ unitNumber, params } = {}) {
+    // console.log("from display nit status", params)
+  }
+  handlePowerUnitStatus(...params) {
+    // console.log("FROM POWER", params);
+  }
+
+  pixelMessageHandler(data) {
+    var data8 = data.slice(1);
+    var data8v = new Uint8Array(data8);
+    // console.log(data8v)
+    // Clear the RGB array for each unit
+    this.displayUnits.forEach(function (unit) {
+      unit.clearPixelArray();
+    });
+
+    // Assign each pixel to the right display unit
+    for (var i = 0, l = data8v.length; i < l; ) {
+      var pixelNumber = i / 3;
+      this.displayUnits[DC.pixelToUnit(pixelNumber)].addPixel(
+        data8v[i++],
+        data8v[i++],
+        data8v[i++]
+      );
+    }
+
+    // Generate the pixel packets
+    this.displayUnits.forEach(function (unit) {
+      unit.savePixelPacket();
+    });
+
+
+    this.sendAllPixels()
+  }
+
+  sendAllPixels(){
+    for(const unit of this.displayUnits){
+      // console.log(unit.pixelBuffer)
+      this.displayBroker.sendToDisplayUnit(unit.ip, unit.port, unit.pixelBuffer)
+    }
+    
+  }
+
+  //this is interface method for observer of display-broker
+  displayMessageHandler(message, from) {
     //parse it
     let data_8 = message.slice(0);
     let data_8v = new Uint8Array(data_8);
@@ -88,8 +136,9 @@ class Display extends EventEmitter {
         this.displayUnits[displayUnitNumber].updateInputStates(data_8, PacketBuilder.rxHeaderLength);
         break;
       case PacketBuilder.commandFlags.rx_statusData:
-        //handlestatusData
+        this.displayUnits[displayUnitNumber].updateStatus(data_8, PacketBuilder.rxHeaderLength);
         break;
+
       case PacketBuilder.commandFlags.rx_powerData:
         if (powerUnitNumber !== null) {
           this.powerUnits[powerUnitNumber].updateStatus(data_8, PacketBuilder.rxHeaderLength);
@@ -99,7 +148,6 @@ class Display extends EventEmitter {
     // console.log("wall received message", message, "\nfrom:", from, displayUnitNumber, powerUnitNumber, "message type", );
   }
 }
-
 
 class Button {
   constructor() {
@@ -111,5 +159,5 @@ module.exports = {
   Display,
   DisplayUnit,
   Button,
-  DisplayEvents
+  DisplayEvents,
 };
