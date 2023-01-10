@@ -1,12 +1,13 @@
 const path = require('path')
 const configs = require("../config/config-manager");
 const DisplayUnitInputPacket = require("../packets/display-unit-input-packet")
-
+const { parse } = require('url');
 const WebserverConfig = configs.getConfig("WEBSERVER");
 const EventEmitter = require("events");
 const express = require("express");
 const ws = require("ws")
 const logger = require('node-color-log')
+const {controlMessageGenerate} = require('./src/common')
 const WebserverEvents = {
   'STATE':'WEBSERVER_PIXEL_STATE'
 }
@@ -22,11 +23,23 @@ class Webserver extends EventEmitter {
     this.app.set('view engine', 'ejs');
     // this.app.engine("html", require("ejs").renderFile);
     this.server = require("http").Server(this.app);
-    this.wsServer = new ws.Server({ noServer: true });
-    this.wsServer.binaryType = 'arraybuffer';
+    this.wsPaths = {
+      APP:'/app',
+      CONTROL:'/control'
+    }
+    this.wsPathByValue = {}
+    this.wsServers = {}
     this.sockets = {};
-
-
+    
+    for(const key in this.wsPaths){
+      this.wsServers[key] = new ws.Server({ noServer: true , path: this.wsPaths[key]})
+      this.sockets[key] = {}
+      this.wsPathByValue[this.wsPaths[key]] = key
+    }
+    this.wsServers['APP'].binaryType = 'arraybuffer';
+    this.app.get('/app-wrapper', (req, res)=>{
+      res.render('app-wrapper')
+    })
     this.app.get('/app/:app_name', function(req, res) {
       // Check if app exists
       var dir_name = req.params.app_name;
@@ -49,20 +62,27 @@ class Webserver extends EventEmitter {
       });
     });
 
-
   }
 
   init() {
     this.server.listen(WebserverConfig.port);
     logger.info('app server on ',WebserverConfig.port )
     this.server.on("upgrade", (request, socket, head) => {
-      this.wsServer.handleUpgrade(request, socket, head, (socket) => {
-        this.wsServer.emit("connection", socket, request);
-      });
+      const { pathname } = parse(request.url);
+      if(pathname in this.wsPathByValue){
+        let pathKey = this.wsPathByValue[pathname]
+        logger.warn("pathKey", pathKey)
+        this.wsServers[pathKey].handleUpgrade(request, socket, head, (socket) => {
+          this.wsServers[pathKey].emit("connection", socket, request);
+        });
+      }else{
+        logger.error("no path match", pathname, this.wsPathByValue)
+      }
     });
 
-    this.wsServer.on("connection", (socket) => {
-      this.sockets[socket] = socket;
+    this.wsServers.APP.on("connection", (socket) => {
+      logger.debug("app connected")
+      this.sockets.APP[socket] = socket;
       socket.on("message", (packet) => {
         // message = parsePacket(packet);
         this.emit(WebserverEvents['STATE'], packet)
@@ -70,18 +90,33 @@ class Webserver extends EventEmitter {
       });
 
       socket.on("close", () => {
-        delete this.sockets[socket];
+        delete this.sockets.APP[socket];
+      });
+    });
+
+    this.wsServers.CONTROL.on("connection", (socket) => {
+      logger.debug("controller connected")
+      this.sockets.CONTROL[socket] = socket;
+      socket.on("message", (packet) => {
+        // message = parsePacket(packet);
+        this.emit(WebserverEvents['STATE'], packet)
+        // console.log(packet)
+      });
+
+      socket.on("close", () => {
+        delete this.sockets.CONTROL[socket];
       });
     });
   }
 
-  sendToSockets(message) {
+  sendToSockets({message, pathKey='APP'}={}) {
     // console.log(this.sockets)
-    for (const key in this.sockets) {
-      try {
-        this.sockets[key].send(message);
-      } catch (e) {}
+    // console.log(this.wsServers[pathKey].clients)
+    for(const client of this.wsServers[pathKey].clients){
+      console.log(message)
+      client.send(message)
     }
+
   }
 
   updateInputState(globalStateChanged){
@@ -100,6 +135,10 @@ class Webserver extends EventEmitter {
     }
 
     this.sendToSockets(data_8v)
+  }
+
+  changeApp(appID){
+    this.sendToSockets({message:controlMessageGenerate.changeApp(appID), pathKey:'CONTROL'})
   }
 }
 

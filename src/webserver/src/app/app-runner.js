@@ -16,40 +16,8 @@ limitations under the License.
 
 
 
-var AnypixelApp = require('./anypixel-app');
-let ws = null;
-function showMessage(message){
-  console.log(message)
-}
-function connect() {
-  if (ws) {
-    ws.onerror = ws.onopen = ws.onclose = null;
-    ws.close();
-  }
-
-  ws = new WebSocket(`ws://${location.host}`);
-
-  ws.binaryType = 'arraybuffer';
-  ws.onerror = function () {
-    showMessage("WebSocket error");
-  };
-  ws.onopen = function () {
-    showMessage("WebSocket connection established");
-    AnypixelApp.setWS(ws)
-  };
-  ws.onclose = function () {
-    showMessage("WebSocket connection closed");
-    ws = null;
-    setTimeout(connect, 100)
-  };
-  ws.onmessage = (event)=>{
-    // console.log(new Uint8Array(event.data), event.type)
-    console.log(event.data)
-    AnypixelApp.receiveMessage(event)
-    // parsePacket(event.data)
-  }
-}
-connect()
+const AnypixelApp = require('./anypixel-app');
+const {WS} = require('../ws.js')
 
 
 /**
@@ -58,8 +26,9 @@ connect()
 var AppRunner = module.exports = {};
 
 AppRunner.canvasId = 'button-canvas';
-
-AppRunner.ws = ws
+AppRunner.ws = new WS('/app');
+AppRunner.ws.init()
+AnypixelApp.setWS(AppRunner.ws)
 document.addEventListener('DOMContentLoaded', function() {
   console.log('App Runner: Init');
 

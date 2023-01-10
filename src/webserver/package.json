@@ -6,7 +6,7 @@
   "scripts": {
     "preinstall": "npm install -g forever",
     "postinstall": "npm run build",
-    "build": "browserify -d src/app-runner.js > public/js/index.js",
+    "build": "browserify -d src/app/app-runner.js > public/js/app.js && browserify -d src/wrapper/app-wrapper.js > public/js/app-wrapper.js ",
     "start": "forever start --minUptime 1000 --spinSleepTime 1000 appserver.js",
     "stop": "forever stop appserver.js"
   },

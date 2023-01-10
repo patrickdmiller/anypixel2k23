@@ -46,6 +46,17 @@ AnypixelApp.setCanvas = function(canvasId) {
 
 AnypixelApp.setWS = function(ws){
   AnypixelApp.ws = ws
+  AnypixelApp.ws.onRawMessage = (event)=>{
+    console.log(event)
+    AnypixelApp.receiveMessage(event)
+  }
+  AnypixelApp.ws.onmessage = (event)=>{
+      
+    // console.log(new Uint8Array(event.data), event.type)
+    console.log(event.data)
+    AnypixelApp.receiveMessage(event)
+    // parsePacket(event.data)
+  }
 }
 
 AnypixelApp.setReady = function(){
