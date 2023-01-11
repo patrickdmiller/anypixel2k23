@@ -1,6 +1,7 @@
 const {APP_IDS} = require('../../config/user-defined/constants')
 const CONTROL_MESSAGE_KEYS = {
   CHANGE_APP: "CHANGE_APP",
+  GET_STATUS:"GET_STATUS"
 };
 const controlMessageGenerate = {
   message: ({ controlMessageKey, payload }) => {

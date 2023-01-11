@@ -3,8 +3,10 @@ const {CONTROL_MESSAGE_KEYS} = require('../common.js')
 const {WS} = require('../ws.js')
 
 let ws = new WS('/control')
+ws.onopen = ()=>{
+  ws.ws.send(JSON.stringify({controlMessageKey:CONTROL_MESSAGE_KEYS.GET_STATUS}))
+}
 ws.init()
-
 ws.onJSONMessage = (data)=>{
   // console.log("got a parsed message", data, JSON.parse(data))
   if(data && data.TYPE){

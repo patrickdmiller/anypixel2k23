@@ -12,6 +12,7 @@ const display = new Display();
 
 
 const gumband = new GumbandExhibit()
+
 gumband.on('APP_ID', (payload)=>{
   console.log("set app")
   appServer.changeApp(payload.value)

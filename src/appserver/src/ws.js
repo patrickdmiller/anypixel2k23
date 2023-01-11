@@ -20,8 +20,8 @@ class WS extends EventEmitter {
       console.error("ws error", e);
     };
     this.ws.onopen = () => {
-      console.log("WebSocket connection established");
-      // AnypixelApp.setWS(ws)
+    
+      this.onopen()
     };
     this.ws.onclose = () => {
       console.warn("WebSocket connection closed");
@@ -36,6 +36,9 @@ class WS extends EventEmitter {
     };
   }
 
+  onopen(){
+    console.log("opened websocket")
+  }
 
 
   onRawMessage(rawMessage) {}

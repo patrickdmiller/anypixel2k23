@@ -7,7 +7,8 @@ const EventEmitter = require("events");
 const express = require("express");
 const ws = require("ws")
 const logger = require('node-color-log')
-const {controlMessageGenerate} = require('./src/common')
+const {controlMessageGenerate, CONTROL_MESSAGE_KEYS} = require('./src/common')
+const {APP_IDS} = require('../config/user-defined/constants')
 const AppServerEvents = {
   'STATE':'APPSERVER_PIXEL_STATE'
 }
@@ -30,7 +31,7 @@ class AppServer extends EventEmitter {
     this.wsPathByValue = {}
     this.wsServers = {}
     this.sockets = {};
-    
+    this.currentState = {appID:null}
     for(const key in this.wsPaths){
       this.wsServers[key] = new ws.Server({ noServer: true , path: this.wsPaths[key]})
       this.sockets[key] = {}
@@ -98,9 +99,17 @@ class AppServer extends EventEmitter {
       logger.debug("controller connected")
       this.sockets.CONTROL[socket] = socket;
       socket.on("message", (packet) => {
-        // message = parsePacket(packet);
-        this.emit(AppServerEvents['STATE'], packet)
-        // console.log(packet)
+      
+        try{
+          let message = JSON.parse(packet.toString())
+          switch(message.controlMessageKey){
+            case CONTROL_MESSAGE_KEYS.GET_STATUS:
+              this.changeApp(this.currentState.appID)
+          }
+        }catch(e){
+          console.error(e)
+        }
+   
       });
 
       socket.on("close", () => {
@@ -138,7 +147,13 @@ class AppServer extends EventEmitter {
   }
 
   changeApp(appID){
-    this.sendToSockets({message:controlMessageGenerate.changeApp(appID), pathKey:'CONTROL'})
+    if(appID in APP_IDS){
+      this.currentState.appID = appID
+      this.sendToSockets({message:controlMessageGenerate.changeApp(appID), pathKey:'CONTROL'})
+    }else{
+      console.error("invalid appid is sent", appID)
+    }
+    
   }
 }
 
