@@ -134,7 +134,7 @@ class AppServer extends EventEmitter {
       data_8v[currentByte++] = state.state
     }
 
-    this.sendToSockets(data_8v)
+    this.sendToSockets({message:data_8v, pathKey:'APP'})
   }
 
   changeApp(appID){

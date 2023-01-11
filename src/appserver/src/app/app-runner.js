@@ -27,7 +27,7 @@ var AppRunner = module.exports = {};
 
 AppRunner.canvasId = 'button-canvas';
 AppRunner.ws = new WS('/app');
-AppRunner.ws.init()
+AppRunner.ws.init({binaryType:"arraybuffer"})
 AnypixelApp.setWS(AppRunner.ws)
 document.addEventListener('DOMContentLoaded', function() {
   console.log('App Runner: Init');

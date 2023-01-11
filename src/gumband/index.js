@@ -52,6 +52,12 @@ class GumbandExhibit extends EventEmitter {
 
     this.gb.on(Sockets.READY, async()=>{
       let settings = await this.gb.getAllSettings()
+      console.log("starting with settings", settings)
+      for(const settingID in settings){
+        if(EVENTS_TO_FORWARD[Sockets.SETTING_RECEIVED].has(settingID)){
+          this.emit(settingID,{value:settings[settingID].value} )
+        }
+      }
       
 
     })

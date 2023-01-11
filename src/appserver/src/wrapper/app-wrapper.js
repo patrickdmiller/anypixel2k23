@@ -1,10 +1,11 @@
-const {APP_IDS, CONTROL_MESSAGE_KEYS} = require('../common.js')
+const {APP_IDS} = require('../../../config/user-defined/constants')
+const {CONTROL_MESSAGE_KEYS} = require('../common.js')
 const {WS} = require('../ws.js')
 
 let ws = new WS('/control')
 ws.init()
 
-ws.onParsedMessage = (data)=>{
+ws.onJSONMessage = (data)=>{
   // console.log("got a parsed message", data, JSON.parse(data))
   if(data && data.TYPE){
     switch(data.TYPE){

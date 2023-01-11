@@ -24,8 +24,8 @@
         "display": "Current App",
         "items": [
           {
-            "id": "STATIC",
-            "display": "static"
+            "id": "BLOCKSQUISH",
+            "display": "blocksquish"
           },
           {
             "id": "BALLPIT",
