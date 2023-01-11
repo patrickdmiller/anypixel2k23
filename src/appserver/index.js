@@ -2,16 +2,16 @@ const path = require('path')
 const configs = require("../config/config-manager");
 const DisplayUnitInputPacket = require("../packets/display-unit-input-packet")
 const { parse } = require('url');
-const WebserverConfig = configs.getConfig("WEBSERVER");
+const AppServerConfig = configs.getConfig("APPSERVER");
 const EventEmitter = require("events");
 const express = require("express");
 const ws = require("ws")
 const logger = require('node-color-log')
 const {controlMessageGenerate} = require('./src/common')
-const WebserverEvents = {
-  'STATE':'WEBSERVER_PIXEL_STATE'
+const AppServerEvents = {
+  'STATE':'APPSERVER_PIXEL_STATE'
 }
-class Webserver extends EventEmitter {
+class AppServer extends EventEmitter {
   constructor() {
     super()
     this.app = require("express")();
@@ -65,8 +65,8 @@ class Webserver extends EventEmitter {
   }
 
   init() {
-    this.server.listen(WebserverConfig.port);
-    logger.info('app server on ',WebserverConfig.port )
+    this.server.listen(AppServerConfig.port);
+    logger.info('app server on ',AppServerConfig.port )
     this.server.on("upgrade", (request, socket, head) => {
       const { pathname } = parse(request.url);
       if(pathname in this.wsPathByValue){
@@ -85,7 +85,7 @@ class Webserver extends EventEmitter {
       this.sockets.APP[socket] = socket;
       socket.on("message", (packet) => {
         // message = parsePacket(packet);
-        this.emit(WebserverEvents['STATE'], packet)
+        this.emit(AppServerEvents['STATE'], packet)
         // console.log(packet)
       });
 
@@ -99,7 +99,7 @@ class Webserver extends EventEmitter {
       this.sockets.CONTROL[socket] = socket;
       socket.on("message", (packet) => {
         // message = parsePacket(packet);
-        this.emit(WebserverEvents['STATE'], packet)
+        this.emit(AppServerEvents['STATE'], packet)
         // console.log(packet)
       });
 
@@ -143,6 +143,6 @@ class Webserver extends EventEmitter {
 }
 
 module.exports = {
-  Webserver,
-  WebserverEvents
+  AppServer,
+  AppServerEvents
 };

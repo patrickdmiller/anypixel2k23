@@ -6,7 +6,7 @@ if(process.env.EMULATOR=="true"){
 }
 const configs = require("./config/config-manager");
 const { Display, DisplayEvents } = require("./display/display.js");
-const {Webserver:AppServer, WebserverEvents} = require('./webserver')
+const {AppServer, AppServerEvents} = require('./appserver')
 const {GumbandExhibit} = require("./gumband")
 const display = new Display();
 
@@ -28,6 +28,6 @@ display.on(DisplayEvents['STATE_INPUT'], (globalStateChanges)=>{
 })
 
 //when pixels are updated
-appServer.on(WebserverEvents['STATE'], (pixelData)=>{
+appServer.on(AppServerEvents['STATE'], (pixelData)=>{
   display.pixelMessageHandler(pixelData)
 })

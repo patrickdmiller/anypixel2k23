@@ -18,8 +18,8 @@ const DisplayConfig = configs.getConfig("DISPLAY");
 const EventEmitter = require("events");
 const PacketBuilder = require("../packets/packet-builder");
 
-const CalibrationData = require("../calibration/calibration-data");
-const DotCorrectionData = require("../calibration/dot-correction-data");
+const CalibrationData = require("./calibration/calibration-data");
+const DotCorrectionData = require("./calibration/dot-correction-data");
 const DisplayUnitInputPacket = require("../packets/display-unit-input-packet");
 const DisplayUnitStatusPacket = require("../packets/display-unit-status-packet");
 

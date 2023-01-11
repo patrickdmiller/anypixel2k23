@@ -7,7 +7,7 @@ const configKeys = {
   DISPLAY_ADDRESSING: "DISPLAY_ADDRESSING", //ports and addresses per unit
   POWER: "POWER", //power supply info
   BROKER: "BROKER", //comm broker
-  WEBSERVER: 'WEBSERVER', //webserver that runs apps in chrome
+  APPSERVER: 'APPSERVER', //webserver that runs apps in chrome
   GUMBAND:'GUMBAND'
 };
 if(process.env.EMULATOR == "true"){
