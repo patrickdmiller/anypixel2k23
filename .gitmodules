@@ -1,0 +1,3 @@
+[submodule "src/frontend/framework"]
+	path = src/frontend/framework
+	url = https://github.com/patrickdmiller/anypixel
