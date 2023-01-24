@@ -8,6 +8,7 @@ const PacketBuilder = require("../packets/packet-builder");
 const EventEmitter = require("events");
 const DisplayEvents = {
   STATE_INPUT: "DISPLAY_STATE_INPUT",
+  ONLINE_STATUS:"ONLINE_STATUS"
 };
 class Display extends EventEmitter {
   constructor() {
@@ -18,6 +19,7 @@ class Display extends EventEmitter {
     this.powerUnitsByIP = {};
     let unitNumber = 0;
     this.displayBroker = new DisplayBroker();
+    setInterval( ()=>{this.checkDisplayUnits()}, 1000)
     for (let i = 0; i < DCA.unitAddresses.length; i++) {
       for (let j = 0; j < DCA.unitAddresses[i].length; j++) {
         this.displayUnits[unitNumber] = new DisplayUnit({
@@ -64,7 +66,17 @@ class Display extends EventEmitter {
     this.displayBroker.addPacketObserver(this);
     this.displayBroker.initSockets();
   }
-
+  checkDisplayUnits(){
+  
+    let good = 0
+    for(const displayUnit of this.displayUnits){
+      if(displayUnit.heartbeatStatus){
+        good+=1
+      }
+    }
+    
+    this.emit(DisplayEvents['ONLINE_STATUS'], {good:good + '/' + this.displayUnits.length})
+  }
   handleDisplayUnitState({ unitNumber, params } = {}) {
     let globalStateChanged = [];
     // //figure out global positions for each state change
@@ -78,9 +90,10 @@ class Display extends EventEmitter {
   }
   handleDisplayUnitStatus({ unitNumber, params } = {}) {
     // console.log("from display nit status", params)
+    this.displayUnits[unitNumber].pingHeartbeat()
   }
   handlePowerUnitStatus(...params) {
-    // console.log("FROM POWER", params);
+    this.emit(powerUnitEvents.STATUS, params[0].detail )
   }
 
   pixelMessageHandler(data) {

@@ -15,26 +15,40 @@ const EVENTS_TO_FORWARD = {
 class GumbandExhibit extends EventEmitter {
   constructor() {
     super();
+    this.ready = false
     this.gb = new Gumband(
       gbconfig.TOKEN,
       gbconfig.ID,
       path.join(__dirname, "../config/user-defined/manifest.json"),
       // optional parameters:
-      {
-        customServerIP: "192.168.3.91",
-        endpoint: "custom",
-        version: "v1",
-        contentLocation: "./content",
-      }
+      gbconfig.CONNECTION_OBJECT
+      // {
+      //   endpoint: "dev",
+      //   version: "v1",
+      //   contentLocation: "./content",
+      // }
     );
-
+    this.gb.on(Sockets.CONTROL_RECEIVED, (payload)=>{
+      console.log(payload.id)
+      if(payload.id == 'RELOAD_BACKEND'){
+        setTimeout(function () {
+          process.on("exit", function () {
+              require("child_process").spawn(process.argv.shift(), process.argv, {
+                  cwd: process.cwd(),
+                  detached : true,
+                  stdio: "inherit"
+              });
+          });
+          process.exit();
+      }, 1000);
+      }
+      this.emit(payload.id, payload)
+    })
     this.gb.on(Sockets.SETTING_RECEIVED, (payload) => {
       if (payload.id === "idle_timeout_secs") {
         logger.info(`New idle timeout: ${payload.value}`);
       }
-      // if(payload)
       logger.info("setting", payload)
-      // console.log(payload)
       if(payload && payload.id){
         logger.debug(Sockets.SETTING_RECEIVED,EVENTS_TO_FORWARD[Sockets.SETTING_RECEIVED])
         if(EVENTS_TO_FORWARD[Sockets.SETTING_RECEIVED].has(payload.id )){
@@ -43,24 +57,42 @@ class GumbandExhibit extends EventEmitter {
           logger.warn("not forwarding")
         }
         switch(payload.id){
+          
           case 'APP_ID':
+            logger.debug("forwarding ", payload)
             this.emit('APP_ID', payload)
         }
       }
-      // this.e;
     });
 
     this.gb.on(Sockets.READY, async()=>{
+      logger.warn("HERE")
+      this.ready = true
       let settings = await this.gb.getAllSettings()
       console.log("starting with settings", settings)
       for(const settingID in settings){
+        //this is when i connect, i need to forward all this stuff
         if(EVENTS_TO_FORWARD[Sockets.SETTING_RECEIVED].has(settingID)){
           this.emit(settingID,{value:settings[settingID].value} )
         }
       }
-      
-
     })
+  }
+
+  sendPowerUnitStatus(powerUnitStatus){ 
+    if(this.ready){
+      this.gb.setStatus(`PS${powerUnitStatus.unitNumber}`, JSON.stringify(powerUnitStatus.status))
+    }else{
+      console.log("not ready")
+    }
+  }
+
+  sendDisplayOnlineStatus(status){ 
+    if(this.ready){
+      this.gb.setStatus(`DISPLAY_CONNECTED`, JSON.stringify(status))
+    }else{
+      console.log("not ready")
+    }
   }
 }
 

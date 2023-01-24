@@ -57,6 +57,9 @@ class DisplayUnit extends EventEmitter {
     this.healthStatuses = [];
     this.lastUptimes = [];
     this.broker = broker;
+    this.heartbeatFunc = null
+    this.heartbeatStatus = false
+    this.startHeartbeat()
     // // Initialize input state array with zeros
     // for (var i = 0; i < DisplayConfig.pixelsPerUnit; i++) {
     //   this.inputStates.push(0);
@@ -72,7 +75,17 @@ class DisplayUnit extends EventEmitter {
       this.lastUptimes.push(0);
     }
   }
-
+  pingHeartbeat(){
+    this.heartbeatStatus = true
+    this.startHeartbeat()
+  }
+  startHeartbeat(){
+    
+    clearTimeout(this.heartbeatFunc)
+    this.heartbeatFunc = setTimeout( ()=>{
+      this.heartbeatStatus = false
+    }, 1000)
+  }
   getStateForInput(inputIndex) {
     let byteIndex = Math.floor(inputIndex / 8);
     let shifts = inputIndex - 8 * byteIndex;
@@ -86,10 +99,10 @@ class DisplayUnit extends EventEmitter {
       logger.warn("invalid buffer length for input", buffer.length, headerLength, this.inputStatesBuffer.length);
       return;
     }
-    console.log(buffer)
+    // console.log(buffer)
     let payload = buffer.slice(headerLength);
     let payloadIndex = headerLength;
-    console.log(payload)
+    // console.log(payload)
     let changed = [];
 
     //find changed byte(s)
@@ -106,7 +119,7 @@ class DisplayUnit extends EventEmitter {
         }
       }
     }
-    console.log(changed)
+    // console.log(changed)
     //fire the event so the display knows one of its units has changed state
     if(changed.length > 0) 
       this.emit(DisplayUnitEvents["STATE"], changed);
@@ -136,6 +149,7 @@ class DisplayUnit extends EventEmitter {
 
     // Dispatch status update event
     this.emit(DisplayUnitEvents["STATUS"], status);
+    // console.log(status)
     // document.dispatchEvent(statusUpdateEvent);
   };
 

@@ -1,7 +1,7 @@
 const {APP_IDS} = require('../../../config/user-defined/constants')
 const {CONTROL_MESSAGE_KEYS} = require('../common.js')
 const {WS} = require('../ws.js')
-
+let lastApp = null
 let ws = new WS('/control')
 ws.onopen = ()=>{
   ws.ws.send(JSON.stringify({controlMessageKey:CONTROL_MESSAGE_KEYS.GET_STATUS}))
@@ -14,6 +14,9 @@ ws.onJSONMessage = (data)=>{
       case CONTROL_MESSAGE_KEYS.CHANGE_APP:
         switchApp(data.payload)
         break;
+      case CONTROL_MESSAGE_KEYS.RELOAD_APP:
+        switchApp(lastApp)
+        break
       default:
         console.log(data.TYPE, "unmatched")
     }
@@ -25,7 +28,7 @@ function switchApp(appName){
   if(!APP_IDS[appName]){
     console.error("invalid app", )
   }
-
+  lastApp = appName
   console.log("change the app to ", appName)
   document.getElementById('appFrame').src = '/app/'+APP_IDS[appName]
 }

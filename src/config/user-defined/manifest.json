@@ -6,14 +6,74 @@
         "type": "String",
         "display": "Average LED Temperature",
         "default": "NA",
+        "order": 9
+      },
+      {
+        "id": "PS0",
+        "type": "String",
+        "display": "Power Supply 0",
+        "default": "",
         "order": 0
+      },
+      {
+        "id": "PS1",
+        "type": "String",
+        "display": "Power Supply 1",
+        "default": "",
+        "order": 1
+      },
+      {
+        "id": "PS2",
+        "type": "String",
+        "display": "Power Supply 2",
+        "default": "",
+        "order": 2
+      },
+      {
+        "id": "PS3",
+        "type": "String",
+        "display": "Power Supply 3",
+        "default": "",
+        "order": 3
+      },
+      {
+        "id": "PS4",
+        "type": "String",
+        "display": "Power Supply 4",
+        "default": "",
+        "order": 4
+      },
+      {
+        "id": "DISPLAY_CONNECTED",
+        "type": "String",
+        "display": "Display Connected",
+        "default": "UNKNOWN",
+        "order": 10
       }
     ],
     "controls": [
       {
-        "id": "reload",
+        "id": "RELOAD_FE",
         "type": "Single",
-        "display": "Reload",
+        "display": "Reload Front End (App Wrapper)",
+        "enabledOpMode": "On"
+      },
+      {
+        "id": "RELOAD_APP",
+        "type": "Single",
+        "display": "Reload App",
+        "enabledOpMode": "On"
+      },
+      {
+        "id": "RELOAD_BACKEND",
+        "type": "Single",
+        "display": "Reload Node",
+        "enabledOpMode": "On"
+      },
+      {
+        "id": "UNSTICK",
+        "type": "Single",
+        "display": "Unstick a Button",
         "enabledOpMode": "On"
       }
     ],
@@ -30,7 +90,24 @@
           {
             "id": "BALLPIT",
             "display": "ball pit"
+          },
+          {
+            "id": "AUTOMATA",
+            "display": "automata"
+          },
+          {
+            "id": "SQUISHY",
+            "display": "squishy"
+          },
+          {
+            "id": "BOUNCE",
+            "display": "bounce"
+          },
+          {
+            "id": "HYPERSPACE",
+            "display": "hyperspace"
           }
+
         ]
       }
     ]

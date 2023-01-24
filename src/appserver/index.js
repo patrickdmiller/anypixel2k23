@@ -102,6 +102,7 @@ class AppServer extends EventEmitter {
       
         try{
           let message = JSON.parse(packet.toString())
+          // console.log("Message", message)
           switch(message.controlMessageKey){
             case CONTROL_MESSAGE_KEYS.GET_STATUS:
               this.changeApp(this.currentState.appID)
@@ -122,21 +123,21 @@ class AppServer extends EventEmitter {
     // console.log(this.sockets)
     // console.log(this.wsServers[pathKey].clients)
     for(const client of this.wsServers[pathKey].clients){
-      console.log(message)
+      // console.log(message)
       client.send(message)
     }
 
   }
 
   updateInputState(globalStateChanged){
-    logger.info('in app-broker: display input state', globalStateChanged)
+    // logger.info('in app-broker: display input state', globalStateChanged)
     //build bytes
     const packetLength = DisplayUnitInputPacket.rxPacketLength * globalStateChanged.length + 1;
     let data_8 = new Buffer.alloc(packetLength)
     let data_8v = new Uint8Array(data_8.buffer)
     let currentByte = 0
     data_8v[currentByte++] = DisplayUnitInputPacket.rxHeader;
-    console.log(data_8v.length)
+    // console.log(data_8v.length)
     for(const state of globalStateChanged){
       data_8v[currentByte++] = state.globalRowCol[0]
       data_8v[currentByte++] = state.globalRowCol[1]
@@ -153,7 +154,10 @@ class AppServer extends EventEmitter {
     }else{
       console.error("invalid appid is sent", appID)
     }
-    
+  }
+
+  reloadApp(){
+    this.sendToSockets({message:controlMessageGenerate.reloadApp(), pathKey:'CONTROL'})
   }
 }
 

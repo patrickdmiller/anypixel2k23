@@ -6,6 +6,7 @@ if(process.env.EMULATOR=="true"){
 }
 const configs = require("./config/config-manager");
 const { Display, DisplayEvents } = require("./display/display.js");
+const { powerUnitEvents } = require("./display/power-unit");
 const {AppServer, AppServerEvents} = require('./appserver')
 const {GumbandExhibit} = require("./gumband")
 const display = new Display();
@@ -18,6 +19,14 @@ gumband.on('APP_ID', (payload)=>{
   appServer.changeApp(payload.value)
 })
 
+gumband.on('RELOAD_APP', (payload)=>{
+  appServer.reloadApp()
+})
+
+
+
+
+
 appServer = new AppServer();
 // appBroker = new AppBroker({appserver})
 appServer.init()
@@ -26,6 +35,14 @@ appServer.init()
 //when buttons aka inputs change state, end them to the app broker
 display.on(DisplayEvents['STATE_INPUT'], (globalStateChanges)=>{
   appServer.updateInputState(globalStateChanges)
+})
+
+display.on(DisplayEvents['ONLINE_STATUS'], (status)=>{
+  gumband.sendDisplayOnlineStatus(status)
+})
+
+display.on(powerUnitEvents['STATUS'], (powerUnitStatus)=>{
+  gumband.sendPowerUnitStatus(powerUnitStatus)
 })
 
 //when pixels are updated

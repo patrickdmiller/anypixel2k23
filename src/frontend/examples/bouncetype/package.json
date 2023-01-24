@@ -10,7 +10,7 @@
     "url": "http://www.jeremyabel.com"
   },
   "dependencies": {
-    "anypixel": "^1.0.0"
+    "anypixel": "npm:@patrickdmiller/anypixel"
   },
   "scripts": {
     "build": "browserify -d src/app.js > index.js"

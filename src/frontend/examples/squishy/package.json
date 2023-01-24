@@ -10,8 +10,8 @@
     "postinstall": "browserify src/app.js > index.js"
   },
   "dependencies": {
-    "anypixel": "^1.0.0",
-    "browserify-shim": "^3.8.12",
+    "anypixel": "npm:@patrickdmiller/anypixel",
+    "browserify-shim": "^3.8.16",
     "liquidfun-emscripten": "^1.1.2",
     "lucy-b2": "^1.0.1",
     "pixi.js": "^3.0.9",
